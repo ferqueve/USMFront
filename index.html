@@ -1,0 +1,4166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reservas UTEC</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Font Awesome Brands -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
+    <!-- A-Frame for 360° photos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.27/sweetalert2.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.27/sweetalert2.min.css" rel="stylesheet">
+    <!-- Artyom for voice commands -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/artyom.js/1.0.6/artyom.window.min.js"></script>
+    <!-- FullCalendar -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #34495e, #2c3e50);
+            min-height: calc(100vh - 56px);
+            padding: 0;
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 15px 20px;
+            border-bottom: 1px solid #34495e;
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), #5dade2);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 30px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .login-container {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .calendar-container {
+            min-height: 500px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--success-color), #58d68d);
+            color: white;
+        }
+
+        .reservation-card {
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .pending-card {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .approved-card {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .rejected-card {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .voice-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--danger-color), #ec7063);
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+            transition: all 0.3s;
+        }
+
+        .voice-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.6);
+        }
+
+        .voice-btn.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, var(--success-color), #58d68d);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .room-360-viewer {
+            width: 100%;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-actions {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .notification-badge {
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+
+        .fc-toolbar-title {
+            color: var(--primary-color) !important;
+            font-weight: bold;
+        }
+
+        .fc-button-primary {
+            background-color: var(--secondary-color) !important;
+            border-color: var(--secondary-color) !important;
+        }
+
+        .room-card {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .room-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .resource-badge {
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 15px;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin: 2px;
+            display: inline-block;
+        }
+
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+
+        .status-pending { color: var(--warning-color); }
+        .status-approved { color: var(--success-color); }
+        .status-rejected { color: var(--danger-color); }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary-color), #5dade2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                width: 250px;
+                z-index: 1000;
+                transition: left 0.3s;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .main-content {
+                margin: 10px;
+                padding: 15px;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <button class="btn btn-outline-light me-3 d-lg-none" type="button" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-university me-2"></i>
+                Sistema de Reservas UTEC
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                        <div class="user-avatar d-inline-flex me-2">
+                            <span id="userInitials">U</span>
+                        </div>
+                        <span id="userName">Usuario</span>
+                        <span id="notificationBadge" class="notification-badge hidden">0</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="showProfile()"><i class="fas fa-user me-2"></i>Perfil</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showNotificationSettings()"><i class="fas fa-bell me-2"></i>Notificaciones</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-lg-2 sidebar" id="sidebar">
+                <div class="nav flex-column">
+                    <a class="nav-link active" href="#" onclick="showDashboard()">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a class="nav-link" href="#" onclick="showCalendar()">
+                        <i class="fas fa-calendar-alt me-2"></i>Calendario
+                    </a>
+                    <a class="nav-link" href="#" onclick="showReservations()">
+                        <i class="fas fa-bookmark me-2"></i>Reservas
+                    </a>
+                    <a class="nav-link" href="#" onclick="showRooms()" id="roomsLink">
+                        <i class="fas fa-door-open me-2"></i>Salones
+                    </a>
+                    <a class="nav-link hidden" href="#" onclick="showUsers()" id="usersLink">
+                        <i class="fas fa-users me-2"></i>Usuarios
+                    </a>
+                    <a class="nav-link hidden" href="#" onclick="showReports()" id="reportsLink">
+                        <i class="fas fa-chart-bar me-2"></i>Reportes
+                    </a>
+                    <a class="nav-link" href="#" onclick="showPublicEvents()">
+                        <i class="fas fa-globe me-2"></i>Eventos Públicos
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSearch()">
+                        <i class="fas fa-search me-2"></i>Búsqueda
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-lg-10 ms-sm-auto px-0">
+                <!-- Login Screen -->
+                <div id="loginScreen" class="login-container">
+                    <div class="login-card">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-university fa-3x text-primary mb-3"></i>
+                            <h2 class="text-primary">Sistema de Reservas UTEC</h2>
+                            <p class="text-muted">Inicia sesión con tu cuenta institucional</p>
+                        </div>
+                        <form id="loginForm" onsubmit="login(event)">
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="loginEmail" placeholder="correo@utec.edu.uy" required>
+                                <label for="loginEmail">Correo Institucional</label>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <input type="password" class="form-control" id="loginPassword" placeholder="Contraseña" required>
+                                <label for="loginPassword">Contraseña</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">
+                                <span id="loginSpinner" class="loading-spinner hidden"></span>
+                                Iniciar Sesión
+                            </button>
+                        </form>
+                        <div class="text-center">
+                            <a href="#" class="text-muted" onclick="showPasswordRecovery()">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <hr>
+                        <div class="text-center mb-3">
+                            <p class="text-muted mb-3">O inicia sesión con:</p>
+                            <button type="button" class="btn btn-outline-danger me-2" onclick="loginWithGoogle()">
+                                <i class="fab fa-google me-2"></i>Google
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loginWithMicrosoft()">
+                                <i class="fab fa-microsoft me-2"></i>Microsoft
+                            </button>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <p class="text-muted">¿Usuario externo?</p>
+                            <button class="btn btn-outline-primary" onclick="showExternalRegister()">
+                                Registrarse como Externo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard -->
+                <div id="dashboardContent" class="main-content hidden">
+                    <div class="dashboard-header text-center">
+                        <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+                        <p class="mb-0">Bienvenido al Sistema de Reservas de Salones</p>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h4 class="mb-3"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h4>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-primary w-100" onclick="showCreateReservation()">
+                                    <i class="fas fa-plus me-2"></i>Nueva Reserva
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-info w-100" onclick="showCalendar()">
+                                    <i class="fas fa-calendar me-2"></i>Ver Calendario
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-success w-100" onclick="showAvailableRooms()">
+                                    <i class="fas fa-door-open me-2"></i>Salones Disponibles
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-warning w-100" onclick="showPendingReservations()">
+                                    <i class="fas fa-clock me-2"></i>Reservas Pendientes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-4">
+                            <div class="card stats-card text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5>Mis Reservas</h5>
+                                            <h2 id="myReservationsCount">0</h2>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-bookmark fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card" style="background: linear-gradient(135deg, var(--warning-color), #f7dc6f); color: white;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5>Pendientes</h5>
+                                            <h2 id="pendingCount">0</h2>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-clock fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card" style="background: linear-gradient(135deg, var(--secondary-color), #5dade2); color: white;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5>Salones</h5>
+                                            <h2 id="roomsCount">0</h2>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-door-open fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card" style="background: linear-gradient(135deg, var(--danger-color), #ec7063); color: white;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5>Usuarios</h5>
+                                            <h2 id="usersCount">0</h2>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-users fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-calendar me-2"></i>Próximas Reservas</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="upcomingReservations">
+                                        <!-- Upcoming reservations will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-chart-pie me-2"></i>Uso de Salones</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="roomUsageChart" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendarContent" class="main-content hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-calendar-alt me-2"></i>Calendario de Reservas</h2>
+                        <div>
+                            <button class="btn btn-primary me-2" onclick="showCreateReservation()">
+                                <i class="fas fa-plus me-2"></i>Nueva Reserva
+                            </button>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-secondary" onclick="filterCalendar('all')">Todas</button>
+                                <button class="btn btn-outline-secondary" onclick="filterCalendar('approved')">Aprobadas</button>
+                                <button class="btn btn-outline-secondary" onclick="filterCalendar('pending')">Pendientes</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="calendar-container">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+                <!-- Reservations Management -->
+                <div id="reservationsContent" class="main-content hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-bookmark me-2"></i>Gestión de Reservas</h2>
+                        <button class="btn btn-primary" onclick="showCreateReservation()">
+                            <i class="fas fa-plus me-2"></i>Nueva Reserva
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterStatus" onchange="filterReservations()">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="approved">Aprobada</option>
+                                    <option value="rejected">Rechazada</option>
+                                </select>
+                                <label for="filterStatus">Estado</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterRoom" onchange="filterReservations()">
+                                    <option value="">Todos los salones</option>
+                                </select>
+                                <label for="filterRoom">Salón</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="date" class="form-control" id="filterDate" onchange="filterReservations()">
+                                <label for="filterDate">Fecha</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="reservationsList">
+                        <!-- Reservations will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Rooms Management -->
+                <div id="roomsContent" class="main-content hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-door-open me-2"></i>Gestión de Salones</h2>
+                        <button class="btn btn-primary" onclick="showCreateRoom()" id="createRoomBtn">
+                            <i class="fas fa-plus me-2"></i>Nuevo Salón
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="searchRooms" placeholder="Buscar salones..." onkeyup="searchRooms()">
+                                <label for="searchRooms">Buscar salones</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterCapacity" onchange="filterRooms()">
+                                    <option value="">Cualquier capacidad</option>
+                                    <option value="0-20">1-20 personas</option>
+                                    <option value="21-50">21-50 personas</option>
+                                    <option value="51-100">51-100 personas</option>
+                                    <option value="100+">Más de 100</option>
+                                </select>
+                                <label for="filterCapacity">Capacidad</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterResources" onchange="filterRooms()">
+                                    <option value="">Todos los recursos</option>
+                                    <option value="projector">Proyector</option>
+                                    <option value="audio">Sistema de Audio</option>
+                                    <option value="whiteboard">Pizarra</option>
+                                    <option value="computer">Computadora</option>
+                                </select>
+                                <label for="filterResources">Recursos</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="roomsList" class="row">
+                        <!-- Rooms will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Users Management -->
+                <div id="usersContent" class="main-content hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-users me-2"></i>Gestión de Usuarios</h2>
+                        <button class="btn btn-primary" onclick="showCreateUser()">
+                            <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="searchUsers" placeholder="Buscar usuarios..." onkeyup="searchUsers()">
+                                <label for="searchUsers">Buscar usuarios</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterRole" onchange="filterUsers()">
+                                    <option value="">Todos los roles</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="analyst">Analista</option>
+                                    <option value="professor">Profesor</option>
+                                    <option value="student">Estudiante</option>
+                                    <option value="external">Externo</option>
+                                </select>
+                                <label for="filterRole">Rol</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterUserStatus" onchange="filterUsers()">
+                                    <option value="">Todos los estados</option>
+                                    <option value="active">Activo</option>
+                                    <option value="inactive">Inactivo</option>
+                                </select>
+                                <label for="filterUserStatus">Estado</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Última Conexión</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reports -->
+                <div id="reportsContent" class="main-content hidden">
+                    <h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Reportes y Estadísticas</h2>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-chart-line me-2"></i>Uso de Salones por Mes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="monthlyUsageChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-fire me-2"></i>Salones Más Demandados</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topRoomsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-clock me-2"></i>Mapa de Calor - Ocupación por Horario</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="heatmapChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-tools me-2"></i>Uso de Recursos</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="resourcesChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5><i class="fas fa-download me-2"></i>Exportar Reportes</h5>
+                                    <div>
+                                        <button class="btn btn-success me-2" onclick="exportToPDF()">
+                                            <i class="fas fa-file-pdf me-2"></i>PDF
+                                        </button>
+                                        <button class="btn btn-primary" onclick="exportToExcel()">
+                                            <i class="fas fa-file-excel me-2"></i>Excel
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p>Descarga reportes detallados con estadísticas de uso, ocupación y análisis de recursos.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Public Events -->
+                <div id="publicEventsContent" class="main-content hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-globe me-2"></i>Eventos Públicos</h2>
+                        <button class="btn btn-primary" onclick="showCreatePublicEvent()" id="createEventBtn">
+                            <i class="fas fa-plus me-2"></i>Nuevo Evento
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="searchEvents" placeholder="Buscar eventos..." onkeyup="searchEvents()">
+                                <label for="searchEvents">Buscar eventos</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="date" class="form-control" id="filterEventDate" onchange="filterEvents()">
+                                <label for="filterEventDate">Fecha</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="filterEventType" onchange="filterEvents()">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="conference">Conferencia</option>
+                                    <option value="workshop">Taller</option>
+                                    <option value="seminar">Seminario</option>
+                                    <option value="meeting">Reunión</option>
+                                </select>
+                                <label for="filterEventType">Tipo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="eventsList" class="row">
+                        <!-- Events will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div id="searchContent" class="main-content hidden">
+                    <h2 class="mb-4"><i class="fas fa-search me-2"></i>Búsqueda Avanzada</h2>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="globalSearch" placeholder="Buscar..." onkeyup="performGlobalSearch()">
+                                        <label for="globalSearch">Búsqueda global</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="searchType">
+                                            <option value="all">Todo</option>
+                                            <option value="rooms">Salones</option>
+                                            <option value="reservations">Reservas</option>
+                                            <option value="users">Usuarios</option>
+                                            <option value="events">Eventos</option>
+                                        </select>
+                                        <label for="searchType">Tipo de búsqueda</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-primary w-100 h-100" onclick="performAdvancedSearch()">
+                                        <i class="fas fa-search me-2"></i>Buscar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="date" class="form-control" id="searchDateFrom">
+                                        <label for="searchDateFrom">Fecha desde</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="date" class="form-control" id="searchDateTo">
+                                        <label for="searchDateTo">Fecha hasta</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="searchCapacity" placeholder="Capacidad mínima">
+                                        <label for="searchCapacity">Capacidad mínima</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="searchStatus">
+                                            <option value="">Cualquier estado</option>
+                                            <option value="available">Disponible</option>
+                                            <option value="occupied">Ocupado</option>
+                                            <option value="maintenance">Mantenimiento</option>
+                                        </select>
+                                        <label for="searchStatus">Estado</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="searchResults">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <p>Utiliza los filtros para buscar salones, reservas, usuarios o eventos.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Voice Command Button -->
+    <button id="voiceBtn" class="voice-btn" onclick="toggleVoiceCommands()" title="Comandos de voz">
+        <i class="fas fa-microphone"></i>
+    </button>
+
+    <!-- Modals -->
+    <!-- Create/Edit Reservation Modal -->
+    <div class="modal fade" id="reservationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-bookmark me-2"></i>
+                        <span id="reservationModalTitle">Nueva Reserva</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reservationForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <select class="form-select" id="reservationRoom" required>
+                                        <option value="">Seleccionar salón</option>
+                                    </select>
+                                    <label for="reservationRoom">Salón</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="reservationDate" required>
+                                    <label for="reservationDate">Fecha</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="time" class="form-control" id="reservationStartTime" required>
+                                    <label for="reservationStartTime">Hora de inicio</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="time" class="form-control" id="reservationEndTime" required>
+                                    <label for="reservationEndTime">Hora de fin</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="reservationDescription" style="height: 100px"></textarea>
+                                <label for="reservationDescription">Descripción/Motivo</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Recursos requeridos:</label>
+                            <div id="resourcesCheckboxes" class="row">
+                                <!-- Resources checkboxes will be generated here -->
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isRecurring">
+                                <label class="form-check-label" for="isRecurring">
+                                    Reserva recurrente
+                                </label>
+                            </div>
+                        </div>
+                        <div id="recurringOptions" class="hidden">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="recurringFrequency">
+                                            <option value="weekly">Semanal</option>
+                                            <option value="biweekly">Cada 2 semanas</option>
+                                            <option value="monthly">Mensual</option>
+                                        </select>
+                                        <label for="recurringFrequency">Frecuencia</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" class="form-control" id="recurringEndDate">
+                                        <label for="recurringEndDate">Hasta</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveReservation()">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Room Modal -->
+    <div class="modal fade" id="roomModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-door-open me-2"></i>
+                        <span id="roomModalTitle">Nuevo Salón</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roomForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="roomName" required>
+                                    <label for="roomName">Nombre del salón</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="roomLocation" required>
+                                    <label for="roomLocation">Ubicación</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="roomCapacity" required min="1">
+                                    <label for="roomCapacity">Capacidad</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <select class="form-select" id="roomCategory">
+                                        <option value="classroom">Aula</option>
+                                        <option value="laboratory">Laboratorio</option>
+                                        <option value="conference">Sala de conferencias</option>
+                                        <option value="auditorium">Auditorio</option>
+                                    </select>
+                                    <label for="roomCategory">Categoría</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="roomDescription" style="height: 100px"></textarea>
+                                <label for="roomDescription">Descripción</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Recursos disponibles:</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="hasProjector">
+                                        <label class="form-check-label" for="hasProjector">Proyector</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="hasAudio">
+                                        <label class="form-check-label" for="hasAudio">Sistema de Audio</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="hasWhiteboard">
+                                        <label class="form-check-label" for="hasWhiteboard">Pizarra</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="hasComputer">
+                                        <label class="form-check-label" for="hasComputer">Computadora</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="url" class="form-control" id="room360Image" placeholder="URL de imagen 360°">
+                                <label for="room360Image">Imagen 360° (opcional)</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRoom()">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room 360° Viewer Modal -->
+    <div class="modal fade" id="room360Modal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye me-2"></i>
+                        Vista 360° del Salón
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="room-360-viewer">
+                        <a-scene embedded style="height: 400px;">
+                            <a-sky id="room360Sky" src=""></a-sky>
+                            <a-camera look-controls wasd-controls></a-camera>
+                        </a-scene>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        <span id="userModalTitle">Nuevo Usuario</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="userFirstName" required>
+                                    <label for="userFirstName">Nombre</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="userLastName" required>
+                                    <label for="userLastName">Apellido</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="userEmail" required>
+                                <label for="userEmail">Email</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <select class="form-select" id="userRole" required>
+                                    <option value="">Seleccionar rol</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="analyst">Analista</option>
+                                    <option value="professor">Profesor</option>
+                                    <option value="student">Estudiante</option>
+                                    <option value="external">Externo</option>
+                                </select>
+                                <label for="userRole">Rol</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="password" class="form-control" id="userPassword">
+                                <label for="userPassword">Contraseña (dejar vacío para mantener actual)</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="userActive" checked>
+                                <label class="form-check-label" for="userActive">
+                                    Usuario activo
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings Modal -->
+    <div class="modal fade" id="notificationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-bell me-2"></i>
+                        Configuración de Notificaciones
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Métodos de notificación:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                <i class="fas fa-envelope me-2"></i>Email
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                <i class="fas fa-sms me-2"></i>SMS
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipos de notificaciones:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reservationCreated" checked>
+                            <label class="form-check-label" for="reservationCreated">
+                                Reserva creada
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reservationApproved" checked>
+                            <label class="form-check-label" for="reservationApproved">
+                                Reserva aprobada/rechazada
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reservationReminder" checked>
+                            <label class="form-check-label" for="reservationReminder">
+                                Recordatorios (1 hora antes)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="smsPhoneDiv" class="hidden">
+                        <div class="form-floating">
+                            <input type="tel" class="form-control" id="smsPhone">
+                            <label for="smsPhone">Número de teléfono</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNotificationSettings()">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentView = 'login';
+        let calendar = null;
+        let artyom = null;
+        let isListening = false;
+
+        // Mock data
+        let mockData = {
+            users: [
+                {
+                    id: 1,
+                    email: 'admin@utec.edu.uy',
+                    password: 'admin123',
+                    firstName: 'Admin',
+                    lastName: 'Sistema',
+                    role: 'admin',
+                    active: true,
+                    lastLogin: new Date()
+                },
+                {
+                    id: 2,
+                    email: 'analista@utec.edu.uy',
+                    password: 'analista123',
+                    firstName: 'María',
+                    lastName: 'González',
+                    role: 'analyst',
+                    active: true,
+                    lastLogin: new Date()
+                },
+                {
+                    id: 3,
+                    email: 'profesor@utec.edu.uy',
+                    password: 'profesor123',
+                    firstName: 'Juan',
+                    lastName: 'Pérez',
+                    role: 'professor',
+                    active: true,
+                    lastLogin: new Date()
+                }
+            ],
+            rooms: [
+                {
+                    id: 1,
+                    name: 'Aula 101',
+                    location: 'Edificio A - Piso 1',
+                    capacity: 30,
+                    category: 'classroom',
+                    description: 'Aula estándar con capacidad para 30 estudiantes',
+                    resources: ['projector', 'whiteboard', 'audio'],
+                    image360: 'https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg',
+                    active: true
+                },
+                {
+                    id: 2,
+                    name: 'Lab Informática',
+                    location: 'Edificio B - Piso 2',
+                    capacity: 25,
+                    category: 'laboratory',
+                    description: 'Laboratorio de informática con 25 computadoras',
+                    resources: ['computer', 'projector', 'audio'],
+                    image360: null,
+                    active: true
+                },
+                {
+                    id: 3,
+                    name: 'Auditorio Central',
+                    location: 'Edificio Central',
+                    capacity: 200,
+                    category: 'auditorium',
+                    description: 'Auditorio principal para eventos grandes',
+                    resources: ['projector', 'audio', 'microphone'],
+                    image360: null,
+                    active: true
+                }
+            ],
+            reservations: [
+                {
+                    id: 1,
+                    roomId: 1,
+                    userId: 3,
+                    date: '2024-01-15',
+                    startTime: '09:00',
+                    endTime: '11:00',
+                    description: 'Clase de Matemáticas',
+                    status: 'approved',
+                    resources: ['projector', 'whiteboard'],
+                    createdAt: new Date(),
+                    approvedBy: 2
+                },
+                {
+                    id: 2,
+                    roomId: 2,
+                    userId: 3,
+                    date: '2024-01-16',
+                    startTime: '14:00',
+                    endTime: '16:00',
+                    description: 'Práctica de Programación',
+                    status: 'pending',
+                    resources: ['computer'],
+                    createdAt: new Date()
+                }
+            ],
+            events: [
+                {
+                    id: 1,
+                    title: 'Conferencia de Tecnología',
+                    description: 'Conferencia sobre las últimas tendencias en tecnología',
+                    date: '2024-02-01',
+                    startTime: '10:00',
+                    endTime: '12:00',
+                    location: 'Auditorio Central',
+                    type: 'conference',
+                    isPublic: true,
+                    organizer: 'Universidad'
+                }
+            ]
+        };
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            initializeVoiceCommands();
+            initializeOAuth(); // Initialize OAuth providers
+            
+            // Add event listeners
+            document.getElementById('isRecurring').addEventListener('change', function() {
+                const recurringOptions = document.getElementById('recurringOptions');
+                if (this.checked) {
+                    recurringOptions.classList.remove('hidden');
+                } else {
+                    recurringOptions.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('smsNotifications').addEventListener('change', function() {
+                const phoneDiv = document.getElementById('smsPhoneDiv');
+                if (this.checked) {
+                    phoneDiv.classList.remove('hidden');
+                } else {
+                    phoneDiv.classList.add('hidden');
+                }
+            });
+        });
+
+        function initializeApp() {
+            // Check if user is already logged in (simulate with localStorage)
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            hideAllContent();
+        }
+
+        function hideAllContent() {
+            const contents = ['dashboardContent', 'calendarContent', 'reservationsContent', 
+                            'roomsContent', 'usersContent', 'reportsContent', 'publicEventsContent', 
+                            'searchContent'];
+            contents.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            updateUserInterface();
+            showDashboard();
+            loadInitialData();
+        }
+
+        function updateUserInterface() {
+            if (!currentUser) return;
+
+            // Update user display
+            document.getElementById('userName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+            document.getElementById('userInitials').textContent = 
+                `${currentUser.firstName[0]}${currentUser.lastName[0]}`;
+
+            // Show/hide menu items based on role
+            const adminLinks = ['usersLink', 'reportsLink'];
+            const analystLinks = ['roomsLink'];
+
+            if (currentUser.role === 'admin') {
+                adminLinks.forEach(id => document.getElementById(id).classList.remove('hidden'));
+                analystLinks.forEach(id => document.getElementById(id).classList.remove('hidden'));
+                document.getElementById('createRoomBtn').classList.remove('hidden');
+                document.getElementById('createEventBtn').classList.remove('hidden');
+            } else if (currentUser.role === 'analyst') {
+                analystLinks.forEach(id => document.getElementById(id).classList.remove('hidden'));
+                document.getElementById('createRoomBtn').classList.remove('hidden');
+                document.getElementById('createEventBtn').classList.remove('hidden');
+            } else {
+                adminLinks.forEach(id => document.getElementById(id).classList.add('hidden'));
+                document.getElementById('createRoomBtn').classList.add('hidden');
+                document.getElementById('createEventBtn').classList.add('hidden');
+            }
+        }
+
+        // OAuth Configuration
+        const GOOGLE_CLIENT_ID = 'your-google-client-id.googleusercontent.com'; // Reemplazar con tu Client ID real
+        const MICROSOFT_CLIENT_ID = 'your-microsoft-client-id'; // Reemplazar con tu Client ID real
+
+        // Initialize OAuth
+        function initializeOAuth() {
+            // Load Google OAuth script
+            if (typeof gapi === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://apis.google.com/js/gapi.js';
+                script.onload = () => {
+                    gapi.load('auth2', () => {
+                        gapi.auth2.init({
+                            client_id: GOOGLE_CLIENT_ID
+                        }).then(() => {
+                            console.log('Google OAuth initialized');
+                        }).catch(err => {
+                            console.error('Error initializing Google OAuth:', err);
+                        });
+                    });
+                };
+                document.head.appendChild(script);
+            }
+
+            // Load Microsoft OAuth script (MSAL)
+            if (typeof Msal === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js';
+                script.onload = () => {
+                    window.msalInstance = new Msal.PublicClientApplication({
+                        auth: {
+                            clientId: MICROSOFT_CLIENT_ID,
+                            authority: 'https://login.microsoftonline.com/common',
+                            redirectUri: window.location.origin
+                        }
+                    });
+                    console.log('Microsoft OAuth initialized');
+                };
+                document.head.appendChild(script);
+            }
+        }
+
+        // Google OAuth Login
+        function loginWithGoogle() {
+            if (typeof gapi === 'undefined' || !gapi.auth2) {
+                // Fallback to simulate OAuth for demo
+                simulateOAuthLogin('google');
+                return;
+            }
+
+            const authInstance = gapi.auth2.getAuthInstance();
+            
+            if (!authInstance) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de OAuth',
+                    text: 'Google OAuth no está inicializado correctamente'
+                });
+                return;
+            }
+
+            authInstance.signIn().then(googleUser => {
+                const profile = googleUser.getBasicProfile();
+                const email = profile.getEmail();
+                
+                // Verify if it's an institutional email for internal users
+                if (email.endsWith('@utec.edu.uy') || email.endsWith('@estudiantes.utec.edu.uy')) {
+                    // Check if user exists in our system
+                    let user = mockData.users.find(u => u.email === email);
+                    
+                    if (!user) {
+                        // Create new user automatically for institutional emails
+                        user = {
+                            id: mockData.users.length + 1,
+                            email: email,
+                            firstName: profile.getGivenName(),
+                            lastName: profile.getFamilyName(),
+                            role: email.includes('@estudiantes.') ? 'student' : 'professor',
+                            active: true,
+                            lastLogin: new Date(),
+                            oauthProvider: 'google',
+                            oauthId: profile.getId()
+                        };
+                        mockData.users.push(user);
+                    }
+                    
+                    if (user.active) {
+                        currentUser = user;
+                        user.lastLogin = new Date();
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        showMainApp();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            text: `Has iniciado sesión con Google, ${user.firstName}`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Usuario inactivo',
+                            text: 'Tu cuenta está desactivada. Contacta al administrador.'
+                        });
+                    }
+                } else {
+                    // External user
+                    let user = mockData.users.find(u => u.email === email);
+                    
+                    if (!user) {
+                        user = {
+                            id: mockData.users.length + 1,
+                            email: email,
+                            firstName: profile.getGivenName(),
+                            lastName: profile.getFamilyName(),
+                            role: 'external',
+                            active: true,
+                            lastLogin: new Date(),
+                            oauthProvider: 'google',
+                            oauthId: profile.getId()
+                        };
+                        mockData.users.push(user);
+                        
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Usuario externo creado',
+                            text: 'Se ha creado tu cuenta como usuario externo. Solo puedes ver eventos públicos.'
+                        });
+                    }
+                    
+                    currentUser = user;
+                    user.lastLogin = new Date();
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    showMainApp();
+                }
+            }).catch(error => {
+                console.error('Error en login con Google:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de autenticación',
+                    text: 'No se pudo completar el inicio de sesión con Google'
+                });
+            });
+        }
+
+        // Microsoft OAuth Login  
+        function loginWithMicrosoft() {
+            if (typeof Msal === 'undefined' || !window.msalInstance) {
+                // Fallback to simulate OAuth for demo
+                simulateOAuthLogin('microsoft');
+                return;
+            }
+
+            const loginRequest = {
+                scopes: ['user.read']
+            };
+
+            window.msalInstance.loginPopup(loginRequest).then(response => {
+                const email = response.account.username;
+                
+                // Verify if it's an institutional email
+                if (email.endsWith('@utec.edu.uy') || email.endsWith('@estudiantes.utec.edu.uy')) {
+                    let user = mockData.users.find(u => u.email === email);
+                    
+                    if (!user) {
+                        // Create new user automatically for institutional emails
+                        user = {
+                            id: mockData.users.length + 1,
+                            email: email,
+                            firstName: response.account.name?.split(' ')[0] || 'Usuario',
+                            lastName: response.account.name?.split(' ').slice(1).join(' ') || 'Microsoft',
+                            role: email.includes('@estudiantes.') ? 'student' : 'professor',
+                            active: true,
+                            lastLogin: new Date(),
+                            oauthProvider: 'microsoft',
+                            oauthId: response.account.homeAccountId
+                        };
+                        mockData.users.push(user);
+                    }
+                    
+                    if (user.active) {
+                        currentUser = user;
+                        user.lastLogin = new Date();
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        showMainApp();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            text: `Has iniciado sesión con Microsoft, ${user.firstName}`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Usuario inactivo',
+                            text: 'Tu cuenta está desactivada. Contacta al administrador.'
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Email no institucional',
+                        text: 'Debes usar un correo institucional de UTEC para acceder.'
+                    });
+                }
+            }).catch(error => {
+                console.error('Error en login con Microsoft:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de autenticación',
+                    text: 'No se pudo completar el inicio de sesión con Microsoft'
+                });
+            });
+        }
+
+        // Simulate OAuth for demo purposes (cuando las librerías no están disponibles)
+        function simulateOAuthLogin(provider) {
+            Swal.fire({
+                title: `Simulación de OAuth - ${provider}`,
+                html: `
+                    <div class="text-start">
+                        <p class="mb-3">Para la demostración, simula un login con ${provider}:</p>
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="oauthEmail" placeholder="usuario@utec.edu.uy">
+                            <label for="oauthEmail">Email (usa @utec.edu.uy para institucional)</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="oauthFirstName" placeholder="Nombre">
+                            <label for="oauthFirstName">Nombre</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="oauthLastName" placeholder="Apellido">
+                            <label for="oauthLastName">Apellido</label>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Iniciar Sesión',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const email = document.getElementById('oauthEmail').value;
+                    const firstName = document.getElementById('oauthFirstName').value;
+                    const lastName = document.getElementById('oauthLastName').value;
+
+                    if (!email || !firstName || !lastName) {
+                        Swal.showValidationMessage('Todos los campos son obligatorios');
+                        return false;
+                    }
+
+                    if (!email.includes('@')) {
+                        Swal.showValidationMessage('Ingresa un email válido');
+                        return false;
+                    }
+
+                    return { email, firstName, lastName };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { email, firstName, lastName } = result.value;
+                    
+                    // Determine role based on email
+                    let role = 'external';
+                    if (email.endsWith('@utec.edu.uy')) {
+                        role = 'professor';
+                    } else if (email.endsWith('@estudiantes.utec.edu.uy')) {
+                        role = 'student';
+                    }
+                    
+                    // Check if user exists
+                    let user = mockData.users.find(u => u.email === email);
+                    
+                    if (!user) {
+                        // Create new user
+                        user = {
+                            id: mockData.users.length + 1,
+                            email: email,
+                            firstName: firstName,
+                            lastName: lastName,
+                            role: role,
+                            active: true,
+                            lastLogin: new Date(),
+                            oauthProvider: provider,
+                            oauthId: `${provider}_${Date.now()}`
+                        };
+                        mockData.users.push(user);
+                    }
+                    
+                    if (user.active) {
+                        currentUser = user;
+                        user.lastLogin = new Date();
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        showMainApp();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            text: `Simulación de OAuth exitosa con ${provider}`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Usuario inactivo',
+                            text: 'Tu cuenta está desactivada. Contacta al administrador.'
+                        });
+                    }
+                }
+            });
+        }
+
+        // Logout from OAuth providers
+        function logoutFromOAuth() {
+            if (currentUser && currentUser.oauthProvider) {
+                if (currentUser.oauthProvider === 'google' && typeof gapi !== 'undefined' && gapi.auth2) {
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    if (authInstance) {
+                        authInstance.signOut();
+                    }
+                } else if (currentUser.oauthProvider === 'microsoft' && window.msalInstance) {
+                    const account = window.msalInstance.getActiveAccount();
+                    if (account) {
+                        window.msalInstance.logoutPopup({
+                            account: account
+                        });
+                    }
+                }
+            }
+        }
+
+        // Update logout function to include OAuth logout
+        const originalLogout = logout;
+        logout = function() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: '¿Estás seguro de que quieres cerrar sesión?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    logoutFromOAuth();
+                    currentUser = null;
+                    localStorage.removeItem('currentUser');
+                    showLogin();
+                    
+                    // Reset form
+                    document.getElementById('loginForm').reset();
+                }
+            });
+        };
+        function login(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const spinner = document.getElementById('loginSpinner');
+
+            spinner.classList.remove('hidden');
+
+            // Simulate API call
+            setTimeout(() => {
+                const user = mockData.users.find(u => u.email === email && u.password === password);
+                
+                if (user && user.active) {
+                    currentUser = user;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    showMainApp();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Bienvenido!',
+                        text: `Has iniciado sesión correctamente, ${user.firstName}`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de autenticación',
+                        text: 'Credenciales incorrectas o usuario inactivo'
+                    });
+                }
+                
+                spinner.classList.add('hidden');
+            }, 1000);
+        }
+
+        function logout() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: '¿Estás seguro de que quieres cerrar sesión?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    currentUser = null;
+                    localStorage.removeItem('currentUser');
+                    showLogin();
+                    
+                    // Reset form
+                    document.getElementById('loginForm').reset();
+                }
+            });
+        }
+
+        function showPasswordRecovery() {
+            Swal.fire({
+                title: 'Recuperar contraseña',
+                input: 'email',
+                inputLabel: 'Ingresa tu correo institucional',
+                inputPlaceholder: 'correo@utec.edu.uy',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Debes ingresar un correo electrónico';
+                    }
+                    if (!value.includes('@utec.edu.uy')) {
+                        return 'Debe ser un correo institucional (@utec.edu.uy)';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Correo enviado',
+                        text: 'Se ha enviado un enlace de recuperación a tu correo electrónico'
+                    });
+                }
+            });
+        }
+
+        function showExternalRegister() {
+            Swal.fire({
+                title: 'Registro de Usuario Externo',
+                html: `
+                    <div class="text-start">
+                        <div class="mb-3">
+                            <input type="text" id="regFirstName" class="form-control" placeholder="Nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" id="regLastName" class="form-control" placeholder="Apellido" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" id="regEmail" class="form-control" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" id="regPassword" class="form-control" placeholder="Contraseña" required>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Registrarse',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const firstName = document.getElementById('regFirstName').value;
+                    const lastName = document.getElementById('regLastName').value;
+                    const email = document.getElementById('regEmail').value;
+                    const password = document.getElementById('regPassword').value;
+
+                    if (!firstName || !lastName || !email || !password) {
+                        Swal.showValidationMessage('Todos los campos son obligatorios');
+                        return false;
+                    }
+
+                    return { firstName, lastName, email, password };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Add new external user
+                    const newUser = {
+                        id: mockData.users.length + 1,
+                        ...result.value,
+                        role: 'external',
+                        active: true,
+                        lastLogin: new Date()
+                    };
+                    mockData.users.push(newUser);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Registro exitoso',
+                        text: 'Tu cuenta ha sido creada. Se ha enviado un correo de confirmación.'
+                    });
+                }
+            });
+        }
+
+        // Navigation functions
+        function showDashboard() {
+            hideAllContent();
+            document.getElementById('dashboardContent').classList.remove('hidden');
+            updateActiveNavLink('dashboard');
+            loadDashboardData();
+        }
+
+        function showCalendar() {
+            hideAllContent();
+            document.getElementById('calendarContent').classList.remove('hidden');
+            updateActiveNavLink('calendar');
+            initializeCalendar();
+        }
+
+        function showReservations() {
+            hideAllContent();
+            document.getElementById('reservationsContent').classList.remove('hidden');
+            updateActiveNavLink('reservations');
+            loadReservations();
+        }
+
+        function showRooms() {
+            hideAllContent();
+            document.getElementById('roomsContent').classList.remove('hidden');
+            updateActiveNavLink('rooms');
+            loadRooms();
+        }
+
+        function showUsers() {
+            hideAllContent();
+            document.getElementById('usersContent').classList.remove('hidden');
+            updateActiveNavLink('users');
+            loadUsers();
+        }
+
+        function showReports() {
+            hideAllContent();
+            document.getElementById('reportsContent').classList.remove('hidden');
+            updateActiveNavLink('reports');
+            loadReports();
+        }
+
+        function showPublicEvents() {
+            hideAllContent();
+            document.getElementById('publicEventsContent').classList.remove('hidden');
+            updateActiveNavLink('events');
+            loadPublicEvents();
+        }
+
+        function showSearch() {
+            hideAllContent();
+            document.getElementById('searchContent').classList.remove('hidden');
+            updateActiveNavLink('search');
+        }
+
+        function updateActiveNavLink(section) {
+            // Remove active class from all nav links
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Add active class to current section
+            const sectionMap = {
+                dashboard: 0,
+                calendar: 1,
+                reservations: 2,
+                rooms: 3,
+                users: 4,
+                reports: 5,
+                events: 6,
+                search: 7
+            };
+
+            const links = document.querySelectorAll('.sidebar .nav-link');
+            if (links[sectionMap[section]]) {
+                links[sectionMap[section]].classList.add('active');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        // Dashboard functions
+        function loadDashboardData() {
+            updateDashboardStats();
+            loadUpcomingReservations();
+            createRoomUsageChart();
+        }
+
+        function updateDashboardStats() {
+            const userReservations = mockData.reservations.filter(r => r.userId === currentUser.id);
+            const pendingReservations = mockData.reservations.filter(r => r.status === 'pending');
+
+            document.getElementById('myReservationsCount').textContent = userReservations.length;
+            document.getElementById('pendingCount').textContent = pendingReservations.length;
+            document.getElementById('roomsCount').textContent = mockData.rooms.length;
+            document.getElementById('usersCount').textContent = mockData.users.length;
+        }
+
+        function loadUpcomingReservations() {
+            const container = document.getElementById('upcomingReservations');
+            const upcoming = mockData.reservations
+                .filter(r => new Date(r.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 5);
+
+            if (upcoming.length === 0) {
+                container.innerHTML = '<p class="text-muted">No hay reservas próximas</p>';
+                return;
+            }
+
+            container.innerHTML = upcoming.map(reservation => {
+                const room = mockData.rooms.find(r => r.id === reservation.roomId);
+                const user = mockData.users.find(u => u.id === reservation.userId);
+                const statusClass = `status-${reservation.status}`;
+
+                return `
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded">
+                        <div>
+                            <h6 class="mb-1">${room.name}</h6>
+                            <p class="mb-1 text-muted">${reservation.description}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>${reservation.date} 
+                                <i class="fas fa-clock ms-2 me-1"></i>${reservation.startTime} - ${reservation.endTime}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-secondary">${user.firstName} ${user.lastName}</span><br>
+                            <span class="badge bg-${reservation.status === 'approved' ? 'success' : reservation.status === 'pending' ? 'warning' : 'danger'} mt-1">
+                                ${reservation.status === 'approved' ? 'Aprobada' : reservation.status === 'pending' ? 'Pendiente' : 'Rechazada'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createRoomUsageChart() {
+            const ctx = document.getElementById('roomUsageChart').getContext('2d');
+            
+            // Calculate room usage data
+            const roomUsage = mockData.rooms.map(room => {
+                const reservations = mockData.reservations.filter(r => r.roomId === room.id && r.status === 'approved');
+                return {
+                    label: room.name,
+                    count: reservations.length
+                };
+            });
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: roomUsage.map(r => r.label),
+                    datasets: [{
+                        data: roomUsage.map(r => r.count),
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#e74c3c',
+                            '#9b59b6',
+                            '#1abc9c'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Calendar functions
+        function initializeCalendar() {
+            if (calendar) {
+                calendar.destroy();
+            }
+
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: getCalendarEvents(),
+                eventClick: function(info) {
+                    showReservationDetails(info.event.id);
+                },
+                dateClick: function(info) {
+                    showCreateReservation(info.dateStr);
+                }
+            });
+            
+            calendar.render();
+        }
+
+        function getCalendarEvents() {
+            return mockData.reservations.map(reservation => {
+                const room = mockData.rooms.find(r => r.id === reservation.roomId);
+                const user = mockData.users.find(u => u.id === reservation.userId);
+                
+                let color = '#3498db';
+                if (reservation.status === 'pending') color = '#f39c12';
+                else if (reservation.status === 'approved') color = '#27ae60';
+                else if (reservation.status === 'rejected') color = '#e74c3c';
+
+                return {
+                    id: reservation.id,
+                    title: `${room.name} - ${reservation.description}`,
+                    start: `${reservation.date}T${reservation.startTime}`,
+                    end: `${reservation.date}T${reservation.endTime}`,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        reservation: reservation,
+                        room: room,
+                        user: user
+                    }
+                };
+            });
+        }
+
+        function filterCalendar(status) {
+            let events = mockData.reservations;
+            
+            if (status !== 'all') {
+                events = events.filter(r => r.status === status);
+            }
+
+            calendar.removeAllEvents();
+            calendar.addEventSource(getCalendarEvents().filter(e => {
+                if (status === 'all') return true;
+                return e.extendedProps.reservation.status === status;
+            }));
+        }
+
+        // Reservation functions
+        function loadReservations() {
+            populateRoomFilter();
+            filterReservations();
+        }
+
+        function populateRoomFilter() {
+            const select = document.getElementById('filterRoom');
+            select.innerHTML = '<option value="">Todos los salones</option>';
+            
+            mockData.rooms.forEach(room => {
+                select.innerHTML += `<option value="${room.id}">${room.name}</option>`;
+            });
+
+            // Also populate reservation modal room select
+            const reservationRoomSelect = document.getElementById('reservationRoom');
+            reservationRoomSelect.innerHTML = '<option value="">Seleccionar salón</option>';
+            
+            mockData.rooms.forEach(room => {
+                reservationRoomSelect.innerHTML += `<option value="${room.id}">${room.name}</option>`;
+            });
+        }
+
+        function filterReservations() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const roomFilter = document.getElementById('filterRoom').value;
+            const dateFilter = document.getElementById('filterDate').value;
+
+            let filteredReservations = mockData.reservations;
+
+            if (statusFilter) {
+                filteredReservations = filteredReservations.filter(r => r.status === statusFilter);
+            }
+
+            if (roomFilter) {
+                filteredReservations = filteredReservations.filter(r => r.roomId == roomFilter);
+            }
+
+            if (dateFilter) {
+                filteredReservations = filteredReservations.filter(r => r.date === dateFilter);
+            }
+
+            displayReservations(filteredReservations);
+        }
+
+        function displayReservations(reservations) {
+            const container = document.getElementById('reservationsList');
+            
+            if (reservations.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No se encontraron reservas con los filtros aplicados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = reservations.map(reservation => {
+                const room = mockData.rooms.find(r => r.id === reservation.roomId);
+                const user = mockData.users.find(u => u.id === reservation.userId);
+                const canEdit = currentUser.role === 'admin' || currentUser.role === 'analyst' || currentUser.id === reservation.userId;
+                const canApprove = (currentUser.role === 'admin' || currentUser.role === 'analyst') && reservation.status === 'pending';
+                const canDelete = currentUser.role === 'admin' || currentUser.role === 'analyst' || currentUser.id === reservation.userId;
+
+                let cardClass = 'reservation-card';
+                if (reservation.status === 'pending') cardClass = 'pending-card';
+                else if (reservation.status === 'approved') cardClass = 'approved-card';
+                else if (reservation.status === 'rejected') cardClass = 'rejected-card';
+
+                return `
+                    <div class="card mb-3 ${cardClass}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title">${room.name}</h5>
+                                    <p class="card-text">${reservation.description}</p>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-calendar me-1"></i>${reservation.date}
+                                        </span>
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-clock me-1"></i>${reservation.startTime} - ${reservation.endTime}
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-user me-1"></i>${user.firstName} ${user.lastName}
+                                        </span>
+                                    </div>
+                                    ${reservation.resources && reservation.resources.length > 0 ? `
+                                        <div class="mb-2">
+                                            <small class="text-muted">Recursos: </small>
+                                            ${reservation.resources.map(r => `<span class="resource-badge">${r}</span>`).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="mb-2">
+                                        <span class="badge bg-${reservation.status === 'approved' ? 'success' : reservation.status === 'pending' ? 'warning' : 'danger'} fs-6">
+                                            ${reservation.status === 'approved' ? 'Aprobada' : reservation.status === 'pending' ? 'Pendiente' : 'Rechazada'}
+                                        </span>
+                                    </div>
+                                    <div class="btn-group-vertical d-grid gap-2">
+                                        ${canEdit ? `
+                                            <button class="btn btn-outline-primary btn-sm" onclick="editReservation(${reservation.id})">
+                                                <i class="fas fa-edit me-1"></i>Editar
+                                            </button>
+                                        ` : ''}
+                                        ${canApprove ? `
+                                            <button class="btn btn-success btn-sm" onclick="approveReservation(${reservation.id})">
+                                                <i class="fas fa-check me-1"></i>Aprobar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="rejectReservation(${reservation.id})">
+                                                <i class="fas fa-times me-1"></i>Rechazar
+                                            </button>
+                                        ` : ''}
+                                        <button class="btn btn-info btn-sm" onclick="showReservationDetails(${reservation.id})">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </button>
+                                        ${canDelete ? `
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteReservation(${reservation.id})">
+                                                <i class="fas fa-trash me-1"></i>Eliminar
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showCreateReservation(date = null) {
+            document.getElementById('reservationModalTitle').textContent = 'Nueva Reserva';
+            document.getElementById('reservationForm').reset();
+            
+            // Clear any existing reservation ID
+            document.getElementById('reservationForm').removeAttribute('data-reservation-id');
+            
+            if (date) {
+                document.getElementById('reservationDate').value = date;
+            }
+
+            // Generate resources checkboxes
+            generateResourcesCheckboxes();
+            
+            const modal = new bootstrap.Modal(document.getElementById('reservationModal'));
+            modal.show();
+        }
+
+        function generateResourcesCheckboxes() {
+            const container = document.getElementById('resourcesCheckboxes');
+            const resources = ['projector', 'audio', 'whiteboard', 'computer', 'microphone'];
+            
+            container.innerHTML = resources.map(resource => `
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="resource_${resource}" value="${resource}">
+                        <label class="form-check-label" for="resource_${resource}">
+                            ${resource.charAt(0).toUpperCase() + resource.slice(1)}
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveReservation() {
+            const formData = {
+                roomId: parseInt(document.getElementById('reservationRoom').value),
+                date: document.getElementById('reservationDate').value,
+                startTime: document.getElementById('reservationStartTime').value,
+                endTime: document.getElementById('reservationEndTime').value,
+                description: document.getElementById('reservationDescription').value,
+                resources: Array.from(document.querySelectorAll('#resourcesCheckboxes input:checked')).map(cb => cb.value)
+            };
+
+            // Validate form
+            if (!formData.roomId || !formData.date || !formData.startTime || !formData.endTime) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Por favor completa todos los campos obligatorios'
+                });
+                return;
+            }
+
+            const reservationId = document.getElementById('reservationForm').dataset.reservationId;
+            
+            // Check for conflicts (exclude current reservation if editing)
+            const hasConflict = mockData.reservations.some(r => 
+                r.roomId === formData.roomId && 
+                r.date === formData.date && 
+                r.status !== 'rejected' &&
+                r.id != reservationId && // Exclude current reservation when editing
+                ((formData.startTime >= r.startTime && formData.startTime < r.endTime) ||
+                 (formData.endTime > r.startTime && formData.endTime <= r.endTime) ||
+                 (formData.startTime <= r.startTime && formData.endTime >= r.endTime))
+            );
+
+            if (hasConflict) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Conflicto de horario',
+                    text: 'Ya existe una reserva aprobada o pendiente en ese horario'
+                });
+                return;
+            }
+
+            if (reservationId) {
+                // Update existing reservation
+                const reservationIndex = mockData.reservations.findIndex(r => r.id == reservationId);
+                if (reservationIndex !== -1) {
+                    mockData.reservations[reservationIndex] = { 
+                        ...mockData.reservations[reservationIndex], 
+                        ...formData,
+                        updatedAt: new Date()
+                    };
+                }
+            } else {
+                // Create new reservation
+                const newReservation = {
+                    id: mockData.reservations.length + 1,
+                    ...formData,
+                    userId: currentUser.id,
+                    status: currentUser.role === 'admin' || currentUser.role === 'analyst' ? 'approved' : 'pending',
+                    createdAt: new Date()
+                };
+
+                mockData.reservations.push(newReservation);
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('reservationModal')).hide();
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: reservationId ? 'Reserva actualizada' : 'Reserva creada',
+                text: reservationId ? 
+                    'La reserva ha sido actualizada exitosamente' : 
+                    (mockData.reservations[mockData.reservations.length - 1].status === 'approved' ? 
+                        'La reserva ha sido creada y aprobada' : 
+                        'La reserva ha sido creada y está pendiente de aprobación')
+            });
+
+            // Refresh current view
+            if (currentView === 'reservations') {
+                loadReservations();
+            } else if (currentView === 'calendar') {
+                initializeCalendar();
+            }
+
+            // Send notification (simulate)
+            sendNotification(
+                reservationId ? 'Reserva actualizada' : 'Reserva creada', 
+                `Se ha ${reservationId ? 'actualizado' : 'creado'} una reserva para ${formData.date}`
+            );
+        }
+
+        function editReservation(id) {
+            const reservation = mockData.reservations.find(r => r.id === id);
+            if (!reservation) return;
+
+            // Check permissions
+            const canEdit = currentUser.role === 'admin' || 
+                           currentUser.role === 'analyst' || 
+                           currentUser.id === reservation.userId;
+            
+            if (!canEdit) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para editar esta reserva'
+                });
+                return;
+            }
+
+            document.getElementById('reservationModalTitle').textContent = 'Editar Reserva';
+            
+            // Fill form with reservation data
+            document.getElementById('reservationRoom').value = reservation.roomId;
+            document.getElementById('reservationDate').value = reservation.date;
+            document.getElementById('reservationStartTime').value = reservation.startTime;
+            document.getElementById('reservationEndTime').value = reservation.endTime;
+            document.getElementById('reservationDescription').value = reservation.description;
+
+            // Set resources checkboxes
+            document.querySelectorAll('#resourcesCheckboxes input[type="checkbox"]').forEach(cb => {
+                cb.checked = reservation.resources && reservation.resources.includes(cb.value);
+            });
+
+            // Store reservation ID for updating
+            document.getElementById('reservationForm').dataset.reservationId = id;
+
+            // Generate resources checkboxes if not already done
+            generateResourcesCheckboxes();
+
+            // Set resources checkboxes again after generation
+            setTimeout(() => {
+                document.querySelectorAll('#resourcesCheckboxes input[type="checkbox"]').forEach(cb => {
+                    cb.checked = reservation.resources && reservation.resources.includes(cb.value);
+                });
+            }, 100);
+
+            const modal = new bootstrap.Modal(document.getElementById('reservationModal'));
+            modal.show();
+        }
+
+        function deleteReservation(id) {
+            const reservation = mockData.reservations.find(r => r.id === id);
+            if (!reservation) return;
+
+            // Check permissions
+            const canDelete = currentUser.role === 'admin' || 
+                             currentUser.role === 'analyst' || 
+                             currentUser.id === reservation.userId;
+            
+            if (!canDelete) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para eliminar esta reserva'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Eliminar reserva?',
+                text: '¿Estás seguro de que quieres eliminar esta reserva? Esta acción no se puede deshacer.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#e74c3c'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const reservationIndex = mockData.reservations.findIndex(r => r.id === id);
+                    if (reservationIndex !== -1) {
+                        mockData.reservations.splice(reservationIndex, 1);
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reserva eliminada',
+                        text: 'La reserva ha sido eliminada exitosamente'
+                    });
+
+                    // Refresh current view
+                    if (currentView === 'reservations') {
+                        loadReservations();
+                    } else if (currentView === 'calendar') {
+                        initializeCalendar();
+                    }
+
+                    sendNotification('Reserva eliminada', 'Se ha eliminado una reserva');
+                }
+            });
+        }
+
+        function editEvent(id) {
+            const event = mockData.events.find(e => e.id === id);
+            if (!event) return;
+
+            Swal.fire({
+                title: 'Editar Evento',
+                html: `
+                    <div class="text-start">
+                        <div class="mb-3">
+                            <label class="form-label">Título</label>
+                            <input type="text" id="editEventTitle" class="form-control" value="${event.title}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea id="editEventDescription" class="form-control" rows="3" required>${event.description}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" id="editEventDate" class="form-control" value="${event.date}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo</label>
+                                <select id="editEventType" class="form-control" required>
+                                    <option value="conference" ${event.type === 'conference' ? 'selected' : ''}>Conferencia</option>
+                                    <option value="workshop" ${event.type === 'workshop' ? 'selected' : ''}>Taller</option>
+                                    <option value="seminar" ${event.type === 'seminar' ? 'selected' : ''}>Seminario</option>
+                                    <option value="meeting" ${event.type === 'meeting' ? 'selected' : ''}>Reunión</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hora inicio</label>
+                                <input type="time" id="editEventStartTime" class="form-control" value="${event.startTime}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hora fin</label>
+                                <input type="time" id="editEventEndTime" class="form-control" value="${event.endTime}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ubicación</label>
+                            <input type="text" id="editEventLocation" class="form-control" value="${event.location}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Organizador</label>
+                            <input type="text" id="editEventOrganizer" class="form-control" value="${event.organizer}" required>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editEventPublic" ${event.isPublic ? 'checked' : ''}>
+                            <label class="form-check-label" for="editEventPublic">
+                                Evento público
+                            </label>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                width: '600px',
+                preConfirm: () => {
+                    const title = document.getElementById('editEventTitle').value;
+                    const description = document.getElementById('editEventDescription').value;
+                    const date = document.getElementById('editEventDate').value;
+                    const type = document.getElementById('editEventType').value;
+                    const startTime = document.getElementById('editEventStartTime').value;
+                    const endTime = document.getElementById('editEventEndTime').value;
+                    const location = document.getElementById('editEventLocation').value;
+                    const organizer = document.getElementById('editEventOrganizer').value;
+                    const isPublic = document.getElementById('editEventPublic').checked;
+
+                    if (!title || !description || !date || !startTime || !endTime || !location || !organizer) {
+                        Swal.showValidationMessage('Todos los campos son obligatorios');
+                        return false;
+                    }
+
+                    return { title, description, date, type, startTime, endTime, location, organizer, isPublic };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const eventIndex = mockData.events.findIndex(e => e.id === id);
+                    if (eventIndex !== -1) {
+                        mockData.events[eventIndex] = { 
+                            ...mockData.events[eventIndex], 
+                            ...result.value,
+                            updatedAt: new Date()
+                        };
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Evento actualizado',
+                        text: 'El evento ha sido actualizado exitosamente'
+                    });
+
+                    loadPublicEvents();
+                }
+            });
+        }
+
+        function approveReservation(id) {
+            const reservation = mockData.reservations.find(r => r.id === id);
+            if (!reservation) return;
+
+            Swal.fire({
+                title: '¿Aprobar reserva?',
+                text: '¿Estás seguro de que quieres aprobar esta reserva?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, aprobar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    reservation.status = 'approved';
+                    reservation.approvedBy = currentUser.id;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reserva aprobada',
+                        text: 'La reserva ha sido aprobada exitosamente'
+                    });
+
+                    filterReservations();
+                    sendNotification('Reserva aprobada', 'Tu reserva ha sido aprobada');
+                }
+            });
+        }
+
+        function rejectReservation(id) {
+            const reservation = mockData.reservations.find(r => r.id === id);
+            if (!reservation) return;
+
+            Swal.fire({
+                title: '¿Rechazar reserva?',
+                input: 'textarea',
+                inputLabel: 'Motivo del rechazo',
+                inputPlaceholder: 'Explica por qué se rechaza la reserva...',
+                showCancelButton: true,
+                confirmButtonText: 'Rechazar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Debes proporcionar un motivo para el rechazo';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    reservation.status = 'rejected';
+                    reservation.rejectionReason = result.value;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reserva rechazada',
+                        text: 'La reserva ha sido rechazada'
+                    });
+
+                    filterReservations();
+                    sendNotification('Reserva rechazada', 'Tu reserva ha sido rechazada: ' + result.value);
+                }
+            });
+        }
+
+        function showReservationDetails(id) {
+            const reservation = mockData.reservations.find(r => r.id === id);
+            if (!reservation) return;
+
+            const room = mockData.rooms.find(r => r.id === reservation.roomId);
+            const user = mockData.users.find(u => u.id === reservation.userId);
+            const approver = reservation.approvedBy ? mockData.users.find(u => u.id === reservation.approvedBy) : null;
+
+            Swal.fire({
+                title: 'Detalles de la Reserva',
+                html: `
+                    <div class="text-start">
+                        <p><strong>Salón:</strong> ${room.name}</p>
+                        <p><strong>Ubicación:</strong> ${room.location}</p>
+                        <p><strong>Fecha:</strong> ${reservation.date}</p>
+                        <p><strong>Horario:</strong> ${reservation.startTime} - ${reservation.endTime}</p>
+                        <p><strong>Solicitante:</strong> ${user.firstName} ${user.lastName}</p>
+                        <p><strong>Descripción:</strong> ${reservation.description}</p>
+                        <p><strong>Estado:</strong> <span class="badge bg-${reservation.status === 'approved' ? 'success' : reservation.status === 'pending' ? 'warning' : 'danger'}">${reservation.status === 'approved' ? 'Aprobada' : reservation.status === 'pending' ? 'Pendiente' : 'Rechazada'}</span></p>
+                        ${reservation.resources && reservation.resources.length > 0 ? `<p><strong>Recursos:</strong> ${reservation.resources.join(', ')}</p>` : ''}
+                        ${approver ? `<p><strong>Aprobada por:</strong> ${approver.firstName} ${approver.lastName}</p>` : ''}
+                        ${reservation.rejectionReason ? `<p><strong>Motivo de rechazo:</strong> ${reservation.rejectionReason}</p>` : ''}
+                        <p><strong>Creada:</strong> ${new Date(reservation.createdAt).toLocaleString()}</p>
+                    </div>
+                `,
+                confirmButtonText: 'Cerrar'
+            });
+        }
+
+        // Room functions
+        function loadRooms() {
+            displayRooms(mockData.rooms);
+        }
+
+        function searchRooms() {
+            const searchTerm = document.getElementById('searchRooms').value.toLowerCase();
+            const filteredRooms = mockData.rooms.filter(room => 
+                room.name.toLowerCase().includes(searchTerm) ||
+                room.location.toLowerCase().includes(searchTerm) ||
+                room.description.toLowerCase().includes(searchTerm)
+            );
+            displayRooms(filteredRooms);
+        }
+
+        function filterRooms() {
+            const capacityFilter = document.getElementById('filterCapacity').value;
+            const resourceFilter = document.getElementById('filterResources').value;
+            
+            let filteredRooms = mockData.rooms;
+
+            if (capacityFilter) {
+                const [min, max] = capacityFilter.includes('-') ? 
+                    capacityFilter.split('-').map(Number) : 
+                    capacityFilter === '100+' ? [100, Infinity] : [0, 0];
+                
+                filteredRooms = filteredRooms.filter(room => 
+                    room.capacity >= min && (max === Infinity || room.capacity <= max)
+                );
+            }
+
+            if (resourceFilter) {
+                filteredRooms = filteredRooms.filter(room => 
+                    room.resources && room.resources.includes(resourceFilter)
+                );
+            }
+
+            displayRooms(filteredRooms);
+        }
+
+        function displayRooms(rooms) {
+            const container = document.getElementById('roomsList');
+            
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No se encontraron salones con los filtros aplicados</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = rooms.map(room => {
+                const reservationCount = mockData.reservations.filter(r => r.roomId === room.id && r.status === 'approved').length;
+                const canEdit = currentUser.role === 'admin' || currentUser.role === 'analyst';
+
+                return `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card room-card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">${room.name}</h5>
+                                <span class="badge bg-primary">${room.category}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">${room.description}</p>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>${room.location}
+                                    </small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-users me-1"></i>Capacidad: ${room.capacity} personas
+                                    </small>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Recursos:</small><br>
+                                    ${room.resources ? room.resources.map(r => `<span class="resource-badge">${r}</span>`).join('') : '<span class="text-muted">Sin recursos</span>'}
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-chart-bar me-1"></i>Reservas: ${reservationCount}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group w-100" role="group">
+                                    <button class="btn btn-outline-primary" onclick="reserveRoom(${room.id})">
+                                        <i class="fas fa-bookmark me-1"></i>Reservar
+                                    </button>
+                                    ${room.image360 ? `
+                                        <button class="btn btn-outline-info" onclick="show360View('${room.image360}')">
+                                            <i class="fas fa-eye me-1"></i>Vista 360°
+                                        </button>
+                                    ` : ''}
+                                    ${canEdit ? `
+                                        <button class="btn btn-outline-secondary" onclick="editRoom(${room.id})">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function reserveRoom(roomId) {
+            document.getElementById('reservationRoom').value = roomId;
+            showCreateReservation();
+        }
+
+        function show360View(imageUrl) {
+            document.getElementById('room360Sky').setAttribute('src', imageUrl);
+            const modal = new bootstrap.Modal(document.getElementById('room360Modal'));
+            modal.show();
+        }
+
+        function showCreateRoom() {
+            document.getElementById('roomModalTitle').textContent = 'Nuevo Salón';
+            document.getElementById('roomForm').reset();
+            
+            const modal = new bootstrap.Modal(document.getElementById('roomModal'));
+            modal.show();
+        }
+
+        function editRoom(id) {
+            const room = mockData.rooms.find(r => r.id === id);
+            if (!room) return;
+
+            document.getElementById('roomModalTitle').textContent = 'Editar Salón';
+            document.getElementById('roomName').value = room.name;
+            document.getElementById('roomLocation').value = room.location;
+            document.getElementById('roomCapacity').value = room.capacity;
+            document.getElementById('roomCategory').value = room.category;
+            document.getElementById('roomDescription').value = room.description;
+            document.getElementById('room360Image').value = room.image360 || '';
+
+            // Set resource checkboxes
+            document.getElementById('hasProjector').checked = room.resources?.includes('projector') || false;
+            document.getElementById('hasAudio').checked = room.resources?.includes('audio') || false;
+            document.getElementById('hasWhiteboard').checked = room.resources?.includes('whiteboard') || false;
+            document.getElementById('hasComputer').checked = room.resources?.includes('computer') || false;
+
+            // Store the room ID for updating
+            document.getElementById('roomForm').dataset.roomId = id;
+
+            const modal = new bootstrap.Modal(document.getElementById('roomModal'));
+            modal.show();
+        }
+
+        function saveRoom() {
+            const formData = {
+                name: document.getElementById('roomName').value,
+                location: document.getElementById('roomLocation').value,
+                capacity: parseInt(document.getElementById('roomCapacity').value),
+                category: document.getElementById('roomCategory').value,
+                description: document.getElementById('roomDescription').value,
+                image360: document.getElementById('room360Image').value,
+                resources: []
+            };
+
+            // Collect selected resources
+            if (document.getElementById('hasProjector').checked) formData.resources.push('projector');
+            if (document.getElementById('hasAudio').checked) formData.resources.push('audio');
+            if (document.getElementById('hasWhiteboard').checked) formData.resources.push('whiteboard');
+            if (document.getElementById('hasComputer').checked) formData.resources.push('computer');
+
+            // Validate form
+            if (!formData.name || !formData.location || !formData.capacity) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Por favor completa todos los campos obligatorios'
+                });
+                return;
+            }
+
+            const roomId = document.getElementById('roomForm').dataset.roomId;
+            
+            if (roomId) {
+                // Update existing room
+                const roomIndex = mockData.rooms.findIndex(r => r.id == roomId);
+                if (roomIndex !== -1) {
+                    mockData.rooms[roomIndex] = { ...mockData.rooms[roomIndex], ...formData };
+                }
+            } else {
+                // Create new room
+                const newRoom = {
+                    id: mockData.rooms.length + 1,
+                    ...formData,
+                    active: true
+                };
+                mockData.rooms.push(newRoom);
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: roomId ? 'Salón actualizado' : 'Salón creado',
+                text: roomId ? 'El salón ha sido actualizado exitosamente' : 'El salón ha sido creado exitosamente'
+            });
+
+            // Refresh rooms list
+            loadRooms();
+            populateRoomFilter(); // Update filter dropdowns
+        }
+
+        // User functions
+        function loadUsers() {
+            displayUsers(mockData.users);
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchUsers').value.toLowerCase();
+            const filteredUsers = mockData.users.filter(user => 
+                user.firstName.toLowerCase().includes(searchTerm) ||
+                user.lastName.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm)
+            );
+            displayUsers(filteredUsers);
+        }
+
+        function filterUsers() {
+            const roleFilter = document.getElementById('filterRole').value;
+            const statusFilter = document.getElementById('filterUserStatus').value;
+            
+            let filteredUsers = mockData.users;
+
+            if (roleFilter) {
+                filteredUsers = filteredUsers.filter(user => user.role === roleFilter);
+            }
+
+            if (statusFilter) {
+                filteredUsers = filteredUsers.filter(user => 
+                    statusFilter === 'active' ? user.active : !user.active
+                );
+            }
+
+            displayUsers(filteredUsers);
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No se encontraron usuarios con los filtros aplicados</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                const roleLabels = {
+                    admin: 'Administrador',
+                    analyst: 'Analista',
+                    professor: 'Profesor',
+                    student: 'Estudiante',
+                    external: 'Externo'
+                };
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2">
+                                    ${user.firstName[0]}${user.lastName[0]}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">${user.firstName} ${user.lastName}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="badge bg-primary">${roleLabels[user.role]}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-${user.active ? 'success' : 'danger'}">
+                                ${user.active ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </td>
+                        <td>${new Date(user.lastLogin).toLocaleDateString()}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editUser(${user.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-${user.active ? 'warning' : 'success'} btn-sm" onclick="toggleUserStatus(${user.id})">
+                                    <i class="fas fa-${user.active ? 'ban' : 'check'}"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${user.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showCreateUser() {
+            document.getElementById('userModalTitle').textContent = 'Nuevo Usuario';
+            document.getElementById('userForm').reset();
+            document.getElementById('userForm').removeAttribute('data-user-id');
+            
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        function editUser(id) {
+            const user = mockData.users.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('userModalTitle').textContent = 'Editar Usuario';
+            document.getElementById('userFirstName').value = user.firstName;
+            document.getElementById('userLastName').value = user.lastName;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userActive').checked = user.active;
+            document.getElementById('userPassword').value = '';
+
+            document.getElementById('userForm').dataset.userId = id;
+
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        function saveUser() {
+            const formData = {
+                firstName: document.getElementById('userFirstName').value,
+                lastName: document.getElementById('userLastName').value,
+                email: document.getElementById('userEmail').value,
+                role: document.getElementById('userRole').value,
+                active: document.getElementById('userActive').checked
+            };
+
+            const password = document.getElementById('userPassword').value;
+            if (password) {
+                formData.password = password;
+            }
+
+            // Validate form
+            if (!formData.firstName || !formData.lastName || !formData.email || !formData.role) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Por favor completa todos los campos obligatorios'
+                });
+                return;
+            }
+
+            // Validate email format
+            if (!formData.email.includes('@')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Por favor ingresa un email válido'
+                });
+                return;
+            }
+
+            const userId = document.getElementById('userForm').dataset.userId;
+            
+            if (userId) {
+                // Update existing user
+                const userIndex = mockData.users.findIndex(u => u.id == userId);
+                if (userIndex !== -1) {
+                    mockData.users[userIndex] = { ...mockData.users[userIndex], ...formData };
+                }
+            } else {
+                // Create new user
+                // Check if email already exists
+                if (mockData.users.some(u => u.email === formData.email)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ya existe un usuario con este email'
+                    });
+                    return;
+                }
+
+                if (!password) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'La contraseña es obligatoria para nuevos usuarios'
+                    });
+                    return;
+                }
+
+                const newUser = {
+                    id: mockData.users.length + 1,
+                    ...formData,
+                    password: password,
+                    lastLogin: new Date()
+                };
+                mockData.users.push(newUser);
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: userId ? 'Usuario actualizado' : 'Usuario creado',
+                text: userId ? 'El usuario ha sido actualizado exitosamente' : 'El usuario ha sido creado exitosamente'
+            });
+
+            // Refresh users list
+            loadUsers();
+        }
+
+        function toggleUserStatus(id) {
+            const user = mockData.users.find(u => u.id === id);
+            if (!user) return;
+
+            const action = user.active ? 'desactivar' : 'activar';
+            
+            Swal.fire({
+                title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} usuario?`,
+                text: `¿Estás seguro de que quieres ${action} a ${user.firstName} ${user.lastName}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: `Sí, ${action}`,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    user.active = !user.active;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: `Usuario ${user.active ? 'activado' : 'desactivado'}`,
+                        text: `El usuario ha sido ${user.active ? 'activado' : 'desactivado'} exitosamente`
+                    });
+
+                    loadUsers();
+                }
+            });
+        }
+
+        function deleteUser(id) {
+            const user = mockData.users.find(u => u.id === id);
+            if (!user) return;
+
+            if (user.id === currentUser.id) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No puedes eliminar tu propia cuenta'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Eliminar usuario?',
+                text: `¿Estás seguro de que quieres eliminar a ${user.firstName} ${user.lastName}? Esta acción no se puede deshacer.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#e74c3c'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const userIndex = mockData.users.findIndex(u => u.id === id);
+                    if (userIndex !== -1) {
+                        mockData.users.splice(userIndex, 1);
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Usuario eliminado',
+                        text: 'El usuario ha sido eliminado exitosamente'
+                    });
+
+                    loadUsers();
+                }
+            });
+        }
+
+        // Reports functions
+        function loadReports() {
+            createMonthlyUsageChart();
+            createTopRoomsChart();
+            createHeatmapChart();
+            createResourcesChart();
+        }
+
+        function createMonthlyUsageChart() {
+            const ctx = document.getElementById('monthlyUsageChart').getContext('2d');
+            
+            // Generate mock monthly data
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+            const data = months.map(() => Math.floor(Math.random() * 50) + 10);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Reservas por mes',
+                        data: data,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTopRoomsChart() {
+            const ctx = document.getElementById('topRoomsChart').getContext('2d');
+            
+            const roomData = mockData.rooms.map(room => {
+                const reservations = mockData.reservations.filter(r => r.roomId === room.id && r.status === 'approved');
+                return {
+                    name: room.name,
+                    count: reservations.length
+                };
+            }).sort((a, b) => b.count - a.count).slice(0, 5);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: roomData.map(r => r.name),
+                    datasets: [{
+                        label: 'Reservas',
+                        data: roomData.map(r => r.count),
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#e74c3c',
+                            '#9b59b6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHeatmapChart() {
+            const ctx = document.getElementById('heatmapChart').getContext('2d');
+            
+            // Generate mock heatmap data
+            const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+            const hours = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+            
+            const data = [];
+            days.forEach((day, dayIndex) => {
+                hours.forEach((hour, hourIndex) => {
+                    data.push({
+                        x: hourIndex,
+                        y: dayIndex,
+                        v: Math.floor(Math.random() * 100)
+                    });
+                });
+            });
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Ocupación (%)',
+                        data: data,
+                        backgroundColor: function(context) {
+                            const value = context.parsed.v;
+                            const alpha = value / 100;
+                            return `rgba(52, 152, 219, ${alpha})`;
+                        },
+                        pointRadius: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            ticks: {
+                                callback: function(value) {
+                                    return hours[value] || '';
+                                }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return days[value] || '';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createResourcesChart() {
+            const ctx = document.getElementById('resourcesChart').getContext('2d');
+            
+            const resources = ['projector', 'audio', 'whiteboard', 'computer'];
+            const data = resources.map(resource => {
+                return mockData.reservations.filter(r => 
+                    r.resources && r.resources.includes(resource) && r.status === 'approved'
+                ).length;
+            });
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Proyector', 'Audio', 'Pizarra', 'Computadora'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#e74c3c'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportToPDF() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Generando PDF...',
+                text: 'Se está generando el reporte en formato PDF',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        function exportToExcel() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Generando Excel...',
+                text: 'Se está generando el reporte en formato Excel',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // Public Events functions
+        function loadPublicEvents() {
+            displayPublicEvents(mockData.events);
+        }
+
+        function searchEvents() {
+            const searchTerm = document.getElementById('searchEvents').value.toLowerCase();
+            const filteredEvents = mockData.events.filter(event => 
+                event.title.toLowerCase().includes(searchTerm) ||
+                event.description.toLowerCase().includes(searchTerm) ||
+                event.location.toLowerCase().includes(searchTerm)
+            );
+            displayPublicEvents(filteredEvents);
+        }
+
+        function filterEvents() {
+            const dateFilter = document.getElementById('filterEventDate').value;
+            const typeFilter = document.getElementById('filterEventType').value;
+            
+            let filteredEvents = mockData.events;
+
+            if (dateFilter) {
+                filteredEvents = filteredEvents.filter(event => event.date === dateFilter);
+            }
+
+            if (typeFilter) {
+                filteredEvents = filteredEvents.filter(event => event.type === typeFilter);
+            }
+
+            displayPublicEvents(filteredEvents);
+        }
+
+        function displayPublicEvents(events) {
+            const container = document.getElementById('eventsList');
+            
+            if (events.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No se encontraron eventos con los filtros aplicados</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = events.map(event => {
+                const canEdit = currentUser.role === 'admin' || currentUser.role === 'analyst';
+
+                return `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">${event.title}</h5>
+                                <span class="badge bg-info">${event.type}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">${event.description}</p>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>${event.date}
+                                    </small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>${event.startTime} - ${event.endTime}
+                                    </small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>${event.location}
+                                    </small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>Organiza: ${event.organizer}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group w-100" role="group">
+                                    <button class="btn btn-outline-primary" onclick="subscribeToEvent(${event.id})">
+                                        <i class="fas fa-bell me-1"></i>Suscribirse
+                                    </button>
+                                    ${canEdit ? `
+                                        <button class="btn btn-outline-secondary" onclick="editEvent(${event.id})">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function subscribeToEvent(eventId) {
+            const event = mockData.events.find(e => e.id === eventId);
+            if (!event) return;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Suscripción exitosa',
+                text: `Te has suscrito al evento "${event.title}". Recibirás notificaciones sobre actualizaciones.`
+            });
+        }
+
+        function showCreatePublicEvent() {
+            // This would open a modal similar to room/user modals
+            Swal.fire({
+                icon: 'info',
+                title: 'Próximamente',
+                text: 'La funcionalidad de crear eventos estará disponible próximamente'
+            });
+        }
+
+        // Search functions
+        function performGlobalSearch() {
+            const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+            const searchType = document.getElementById('searchType').value;
+            
+            if (!searchTerm.trim()) {
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <p>Ingresa un término de búsqueda para comenzar.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let results = [];
+
+            if (searchType === 'all' || searchType === 'rooms') {
+                const rooms = mockData.rooms.filter(room =>
+                    room.name.toLowerCase().includes(searchTerm) ||
+                    room.location.toLowerCase().includes(searchTerm) ||
+                    room.description.toLowerCase().includes(searchTerm)
+                );
+                results.push(...rooms.map(room => ({ type: 'room', data: room })));
+            }
+
+            if (searchType === 'all' || searchType === 'reservations') {
+                const reservations = mockData.reservations.filter(reservation => {
+                    const room = mockData.rooms.find(r => r.id === reservation.roomId);
+                    const user = mockData.users.find(u => u.id === reservation.userId);
+                    return reservation.description.toLowerCase().includes(searchTerm) ||
+                           room?.name.toLowerCase().includes(searchTerm) ||
+                           user?.firstName.toLowerCase().includes(searchTerm) ||
+                           user?.lastName.toLowerCase().includes(searchTerm);
+                });
+                results.push(...reservations.map(reservation => ({ type: 'reservation', data: reservation })));
+            }
+
+            if (searchType === 'all' || searchType === 'users') {
+                const users = mockData.users.filter(user =>
+                    user.firstName.toLowerCase().includes(searchTerm) ||
+                    user.lastName.toLowerCase().includes(searchTerm) ||
+                    user.email.toLowerCase().includes(searchTerm)
+                );
+                results.push(...users.map(user => ({ type: 'user', data: user })));
+            }
+
+            if (searchType === 'all' || searchType === 'events') {
+                const events = mockData.events.filter(event =>
+                    event.title.toLowerCase().includes(searchTerm) ||
+                    event.description.toLowerCase().includes(searchTerm) ||
+                    event.location.toLowerCase().includes(searchTerm)
+                );
+                results.push(...events.map(event => ({ type: 'event', data: event })));
+            }
+
+            displaySearchResults(results, searchTerm);
+        }
+
+        function performAdvancedSearch() {
+            performGlobalSearch();
+        }
+
+        function displaySearchResults(results, searchTerm) {
+            const container = document.getElementById('searchResults');
+
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <p>No se encontraron resultados para "${searchTerm}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const groupedResults = results.reduce((acc, result) => {
+                if (!acc[result.type]) acc[result.type] = [];
+                acc[result.type].push(result.data);
+                return acc;
+            }, {});
+
+            const typeLabels = {
+                room: 'Salones',
+                reservation: 'Reservas',
+                user: 'Usuarios',
+                event: 'Eventos'
+            };
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h5>Resultados de búsqueda para "${searchTerm}" (${results.length} encontrados)</h5>
+                </div>
+                ${Object.entries(groupedResults).map(([type, items]) => `
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2">${typeLabels[type]} (${items.length})</h6>
+                        <div class="row">
+                            ${items.map(item => renderSearchResultItem(type, item)).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function renderSearchResultItem(type, item) {
+            switch (type) {
+                case 'room':
+                    return `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-door-open me-2"></i>${item.name}
+                                    </h6>
+                                    <p class="card-text small">${item.description}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>${item.location} | 
+                                        <i class="fas fa-users me-1"></i>${item.capacity} personas
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'reservation':
+                    const room = mockData.rooms.find(r => r.id === item.roomId);
+                    const user = mockData.users.find(u => u.id === item.userId);
+                    return `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-bookmark me-2"></i>${item.description}
+                                    </h6>
+                                    <p class="card-text small">
+                                        ${room?.name} | ${item.date} ${item.startTime}-${item.endTime}
+                                    </p>
+                                    <small class="text-muted">
+                                        Por: ${user?.firstName} ${user?.lastName} | 
+                                        Estado: <span class="badge bg-${item.status === 'approved' ? 'success' : item.status === 'pending' ? 'warning' : 'danger'}">${item.status}</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'user':
+                    return `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-user me-2"></i>${item.firstName} ${item.lastName}
+                                    </h6>
+                                    <p class="card-text small">${item.email}</p>
+                                    <small class="text-muted">
+                                        Rol: <span class="badge bg-primary">${item.role}</span> | 
+                                        Estado: <span class="badge bg-${item.active ? 'success' : 'danger'}">${item.active ? 'Activo' : 'Inactivo'}</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'event':
+                    return `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-globe me-2"></i>${item.title}
+                                    </h6>
+                                    <p class="card-text small">${item.description}</p>
+                                    <small class="text-muted">
+                                        ${item.date} ${item.startTime} | ${item.location}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return '';
+            }
+        }
+
+        // Voice Commands
+        function initializeVoiceCommands() {
+            if (typeof Artyom === 'undefined') {
+                console.warn('Artyom library not loaded');
+                return;
+            }
+
+            artyom = new Artyom();
+
+            artyom.addCommands([
+                {
+                    indexes: ['ir al dashboard', 'mostrar dashboard', 'dashboard'],
+                    action: function() {
+                        showDashboard();
+                        speak('Mostrando dashboard');
+                    }
+                },
+                {
+                    indexes: ['ir al calendario', 'mostrar calendario', 'calendario'],
+                    action: function() {
+                        showCalendar();
+                        speak('Mostrando calendario');
+                    }
+                },
+                {
+                    indexes: ['mostrar reservas', 'ir a reservas', 'reservas'],
+                    action: function() {
+                        showReservations();
+                        speak('Mostrando reservas');
+                    }
+                },
+                {
+                    indexes: ['mostrar salones', 'ir a salones', 'salones'],
+                    action: function() {
+                        showRooms();
+                        speak('Mostrando salones');
+                    }
+                },
+                {
+                    indexes: ['nueva reserva', 'crear reserva', 'reservar salón'],
+                    action: function() {
+                        showCreateReservation();
+                        speak('Abriendo formulario de nueva reserva');
+                    }
+                },
+                {
+                    indexes: ['cerrar sesión', 'logout', 'salir'],
+                    action: function() {
+                        logout();
+                    }
+                },
+                {
+                    indexes: ['buscar *', 'buscar'],
+                    smart: true,
+                    action: function(i, wildcard) {
+                        if (wildcard) {
+                            document.getElementById('globalSearch').value = wildcard;
+                            performGlobalSearch();
+                            speak(`Buscando ${wildcard}`);
+                        } else {
+                            showSearch();
+                            speak('Mostrando búsqueda');
+                        }
+                    }
+                }
+            ]);
+        }
+
+        function toggleVoiceCommands() {
+            if (!artyom) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Los comandos de voz no están disponibles'
+                });
+                return;
+            }
+
+            const voiceBtn = document.getElementById('voiceBtn');
+
+            if (!isListening) {
+                artyom.start();
+                isListening = true;
+                voiceBtn.classList.add('listening');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                speak('Comandos de voz activados');
+            } else {
+                artyom.stop();
+                isListening = false;
+                voiceBtn.classList.remove('listening');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                speak('Comandos de voz desactivados');
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Utility functions
+        function loadInitialData() {
+            updateDashboardStats();
+            populateRoomFilter();
+        }
+
+        function showProfile() {
+            if (!currentUser) return;
+
+            Swal.fire({
+                title: 'Mi Perfil',
+                html: `
+                    <div class="text-start">
+                        <div class="text-center mb-3">
+                            <div class="user-avatar mx-auto" style="width: 80px; height: 80px; font-size: 32px;">
+                                ${currentUser.firstName[0]}${currentUser.lastName[0]}
+                            </div>
+                        </div>
+                        <p><strong>Nombre:</strong> ${currentUser.firstName} ${currentUser.lastName}</p>
+                        <p><strong>Email:</strong> ${currentUser.email}</p>
+                        <p><strong>Rol:</strong> ${currentUser.role}</p>
+                        <p><strong>Estado:</strong> ${currentUser.active ? 'Activo' : 'Inactivo'}</p>
+                        <p><strong>Última conexión:</strong> ${new Date(currentUser.lastLogin).toLocaleString()}</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Editar Perfil',
+                cancelButtonText: 'Cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    editUser(currentUser.id);
+                }
+            });
+        }
+
+        function showNotificationSettings() {
+            const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+            modal.show();
+        }
+
+        function saveNotificationSettings() {
+            const settings = {
+                email: document.getElementById('emailNotifications').checked,
+                sms: document.getElementById('smsNotifications').checked,
+                phone: document.getElementById('smsPhone').value,
+                reservationCreated: document.getElementById('reservationCreated').checked,
+                reservationApproved: document.getElementById('reservationApproved').checked,
+                reservationReminder: document.getElementById('reservationReminder').checked
+            };
+
+            // Simulate saving to backend
+            localStorage.setItem(`notifications_${currentUser.id}`, JSON.stringify(settings));
+
+            bootstrap.Modal.getInstance(document.getElementById('notificationModal')).hide();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Configuración guardada',
+                text: 'Tus preferencias de notificación han sido actualizadas'
+            });
+        }
+
+        function sendNotification(title, message) {
+            // Simulate notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body: message });
+            }
+
+            // Update notification badge
+            const badge = document.getElementById('notificationBadge');
+            const currentCount = parseInt(badge.textContent) || 0;
+            badge.textContent = currentCount + 1;
+            badge.classList.remove('hidden');
+
+            // Show toast notification
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: title,
+                text: message,
+                showConfirmButton: false,
+                timer: 3000
+            });
+        }
+
+        function showAvailableRooms() {
+            showRooms();
+            // Auto-filter to show only available rooms
+            document.getElementById('filterCapacity').value = '';
+            document.getElementById('filterResources').value = '';
+            document.getElementById('searchRooms').value = '';
+            loadRooms();
+        }
+
+        function showPendingReservations() {
+            showReservations();
+            // Auto-filter to show only pending reservations
+            document.getElementById('filterStatus').value = 'pending';
+            filterReservations();
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Set current view tracking
+        function updateCurrentView(view) {
+            currentView = view;
+        }
+
+        // Update navigation tracking
+        const originalShowFunctions = {
+            showDashboard: showDashboard,
+            showCalendar: showCalendar,
+            showReservations: showReservations,
+            showRooms: showRooms,
+            showUsers: showUsers,
+            showReports: showReports,
+            showPublicEvents: showPublicEvents,
+            showSearch: showSearch
+        };
+
+        showDashboard = function() {
+            updateCurrentView('dashboard');
+            originalShowFunctions.showDashboard();
+        };
+
+        showCalendar = function() {
+            updateCurrentView('calendar');
+            originalShowFunctions.showCalendar();
+        };
+
+        showReservations = function() {
+            updateCurrentView('reservations');
+            originalShowFunctions.showReservations();
+        };
+
+        showRooms = function() {
+            updateCurrentView('rooms');
+            originalShowFunctions.showRooms();
+        };
+
+        showUsers = function() {
+            updateCurrentView('users');
+            originalShowFunctions.showUsers();
+        };
+
+        showReports = function() {
+            updateCurrentView('reports');
+            originalShowFunctions.showReports();
+        };
+
+        showPublicEvents = function() {
+            updateCurrentView('events');
+            originalShowFunctions.showPublicEvents();
+        };
+
+        showSearch = function() {
+            updateCurrentView('search');
+            originalShowFunctions.showSearch();
+        };
+
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            if (currentUser) {
+                loadInitialData();
+                if (currentView === 'dashboard') {
+                    loadDashboardData();
+                } else if (currentView === 'calendar' && calendar) {
+                    calendar.refetchEvents();
+                }
+            }
+        }, 300000); // 5 minutes
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.view) {
+                switch (event.state.view) {
+                    case 'dashboard': showDashboard(); break;
+                    case 'calendar': showCalendar(); break;
+                    case 'reservations': showReservations(); break;
+                    case 'rooms': showRooms(); break;
+                    case 'users': showUsers(); break;
+                    case 'reports': showReports(); break;
+                    case 'events': showPublicEvents(); break;
+                    case 'search': showSearch(); break;
+                }
+            }
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case '1':
+                        e.preventDefault();
+                        showDashboard();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        showCalendar();
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        showReservations();
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        showRooms();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        if (currentView === 'reservations' || currentView === 'calendar') {
+                            showCreateReservation();
+                        } else if (currentView === 'rooms' && (currentUser.role === 'admin' || currentUser.role === 'analyst')) {
+                            showCreateRoom();
+                        } else if (currentView === 'users' && currentUser.role === 'admin') {
+                            showCreateUser();
+                        }
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        showSearch();
+                        document.getElementById('globalSearch').focus();
+                        break;
+                }
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal.show');
+                openModals.forEach(modal => {
+                    const modalInstance = bootstrap.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                });
+            }
+        });
+
+        // Auto-save form data to prevent data loss
+        function setupAutoSave() {
+            const forms = ['reservationForm', 'roomForm', 'userForm'];
+            
+            forms.forEach(formId => {
+                const form = document.getElementById(formId);
+                if (form) {
+                    const inputs = form.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        input.addEventListener('input', function() {
+                            localStorage.setItem(`autosave_${formId}`, JSON.stringify(getFormData(formId)));
+                        });
+                    });
+                }
+            });
+        }
+
+        function getFormData(formId) {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            return data;
+        }
+
+        function restoreFormData(formId) {
+            const savedData = localStorage.getItem(`autosave_${formId}`);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const input = document.getElementById(key);
+                    if (input) {
+                        input.value = data[key];
+                    }
+                });
+            }
+        }
+
+        // Initialize auto-save when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            setupAutoSave();
+        });
+
+        // Clear auto-save data when forms are successfully submitted
+        function clearAutoSave(formId) {
+            localStorage.removeItem(`autosave_${formId}`);
+        }
+
+        // Add success callbacks to form submissions
+        const originalSaveReservation = saveReservation;
+        const originalSaveRoom = saveRoom;
+        const originalSaveUser = saveUser;
+
+        saveReservation = function() {
+            originalSaveReservation();
+            clearAutoSave('reservationForm');
+        };
+
+        saveRoom = function() {
+            originalSaveRoom();
+            clearAutoSave('roomForm');
+        };
+
+        saveUser = function() {
+            originalSaveUser();
+            clearAutoSave('userForm');
+        };
+    </script>
+</body>
+</html>
+                                
